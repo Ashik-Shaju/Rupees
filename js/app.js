@@ -63,13 +63,13 @@ const views = {
                     <div class="dash-value" id="val-savings">₹0</div>
                 </div>
             </div>
-            <div style="margin-bottom: 0.5rem; text-align: center;">
-                <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text-muted); width: 100%;">Transactions</h2>
+            <div style="margin-bottom: 0.2rem; text-align: center;">
+                <h2 style="font-size: 1.1rem; margin-bottom: 0.2rem; color: var(--text-muted); width: 100%;">Transactions</h2>
             </div>
             
-            <div id="active-filters-chips" style="display:flex; gap: 6px; overflow-x: auto; margin-bottom: 0.75rem; padding-bottom: 2px; scrollbar-width: none;"></div>
+            <div id="active-filters-chips" style="display:flex; gap: 6px; overflow-x: auto; margin-bottom: 0.4rem; padding-bottom: 2px; scrollbar-width: none;"></div>
             
-            <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; flex-wrap: wrap;">
                 <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 0;">
                     <button id="btn-history-filter" style="background:var(--surface-color); border:1px solid var(--border-color); display:flex; align-items:center; gap:6px; font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--text-main); padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex: 1; justify-content: center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -1746,7 +1746,7 @@ function initHistoryTab() {
                 else if (tDateStr === yesterdayStr) displayDate = 'Yesterday';
 
                 if (displayDate !== lastDateString) {
-                    headerHtml = `<div style="padding: 16px 0 8px 0; text-align: center; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); position: sticky; top: -1px; background: var(--bg-color); z-index: 1;">${displayDate}</div>`;
+                    headerHtml = `<div style="padding: 8px 0 4px 0; text-align: center; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); position: sticky; top: -1px; background: var(--bg-color); z-index: 1;">${displayDate}</div>`;
                     lastDateString = displayDate;
                 }
             }
