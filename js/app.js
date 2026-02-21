@@ -63,22 +63,28 @@ const views = {
                     <div class="dash-value" id="val-savings">₹0</div>
                 </div>
             </div>
-            <div class="flex-between" style="margin-bottom: 1rem; align-items: center;">
-                <h2 style="font-size: 1.1rem; margin-bottom: 0; color: var(--text-muted); white-space: nowrap;">Transactions</h2>
-                <div id="active-filters-chips" style="display:flex; gap: 6px; overflow-x: auto; flex: 1; margin: 0 12px; padding-bottom: 2px; scrollbar-width: none;"></div>
-                <div style="display: flex; gap: 8px; align-items: center; padding-right: 4px; flex-shrink: 0;">
-                    <button id="btn-history-filter" style="background:var(--surface-color); border:1px solid var(--border-color); display:flex; align-items:center; gap:6px; font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--text-main); flex-shrink: 0; padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+            <div style="margin-bottom: 0.5rem; text-align: center;">
+                <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text-muted); width: 100%;">Transactions</h2>
+            </div>
+            
+            <div id="active-filters-chips" style="display:flex; gap: 6px; overflow-x: auto; margin-bottom: 0.75rem; padding-bottom: 2px; scrollbar-width: none;"></div>
+            
+            <div style="display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap;">
+                <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 0;">
+                    <button id="btn-history-filter" style="background:var(--surface-color); border:1px solid var(--border-color); display:flex; align-items:center; gap:6px; font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--text-main); padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex: 1; justify-content: center;">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                         Filter
                     </button>
                     <div style="position: relative; display: flex; align-items: center;">
                         <input type="date" id="history-date-picker" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; z-index: -1;">
-                        <button id="btn-history-calendar" style="background:var(--surface-color); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-main); padding:6px 10px; border-radius: 8px; position: relative; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        <button id="btn-history-calendar" style="background:var(--surface-color); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-main); padding:8px 12px; border-radius: 8px; position: relative; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         </button>
                     </div>
-                    <button id="btn-toggle-history-select-all" style="background:var(--surface-color); border:1px solid var(--border-color); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--text-main); display:none; padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Select All</button>
-                    <button id="btn-toggle-history-select" style="background:var(--accent-light); border:1px solid var(--accent-primary); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--accent-primary); display:none; padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Select</button>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center; flex: 1.2; justify-content: flex-end;">
+                    <button id="btn-toggle-history-select-all" style="background:var(--surface-color); border:1px solid var(--border-color); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--text-main); display:none; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex: 1;">Select All</button>
+                    <button id="btn-toggle-history-select" style="background:var(--accent-light); border:1px solid var(--accent-primary); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--accent-primary); display:none; padding: 8px 14px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex: 1;">Select</button>
                 </div>
             </div>
             <div id="history-list" style="overflow-y: auto; flex: 1; padding-bottom: 80px; padding-right: 6px;"></div>
