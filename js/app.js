@@ -1447,17 +1447,38 @@ function initHistoryTab() {
         }
     };
 
-    if (dashToggle) {
-        dashToggle.onclick = () => setDashboardState(!window.isDashboardCollapsed);
+    if (dashToggle && dashContainer) {
+        // Shared toggle function
+        const toggle = () => setDashboardState(!window.isDashboardCollapsed);
+        dashToggle.addEventListener('click', toggle);
 
-        // Touch gestures for swiping
+        // Touch gestures logic
         let touchStartY = 0;
-        dashToggle.ontouchstart = (e) => touchStartY = e.touches[0].clientY;
-        dashToggle.ontouchend = (e) => {
-            const touchEndY = e.changedTouches[0].clientY;
-            if (touchStartY - touchEndY > 30) setDashboardState(true); // Swipe up
-            if (touchEndY - touchStartY > 30) setDashboardState(false); // Swipe down
+        let touchStartX = 0;
+
+        const handleStart = (e) => {
+            touchStartY = e.touches[0].clientY;
+            touchStartX = e.touches[0].clientX;
         };
+
+        const handleEnd = (e) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            const touchEndX = e.changedTouches[0].clientX;
+            const deltaY = touchStartY - touchEndY;
+            const deltaX = Math.abs(touchStartX - touchEndX);
+
+            // Threshold of 40px and more vertical than horizontal
+            if (Math.abs(deltaY) > 40 && Math.abs(deltaY) > deltaX) {
+                if (deltaY > 0) setDashboardState(true); // Swipe Up -> Collapse
+                else setDashboardState(false);          // Swipe Down -> Expand
+            }
+        };
+
+        // Apply listeners to both the dashboard and the handle
+        [dashContainer, dashToggle].forEach(el => {
+            el.addEventListener('touchstart', handleStart, { passive: true });
+            el.addEventListener('touchend', handleEnd, { passive: true });
+        });
 
         // Initialize state
         setDashboardState(window.isDashboardCollapsed);

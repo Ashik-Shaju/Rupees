@@ -454,3 +454,47 @@ select.form-control {
         transform: translateY(0);
     }
 }
+
+/* History Collapsible Dashboard */
+#history-dashboard-container {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    max-height: 400px;
+}
+
+#history-dashboard-container.collapsed {
+    max-height: 0;
+    margin-bottom: 0 !important;
+    opacity: 0;
+}
+
+.dashboard-toggle-handle {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    cursor: pointer;
+}
+
+.handle-bar {
+    width: 40px;
+    height: 4px;
+    background-color: var(--border-color);
+    border-radius: var(--radius-full);
+    margin-bottom: 4px;
+}
+
+.handle-text {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: opacity 0.2s;
+}
+
+#view-history.dashboard-collapsed .dashboard-toggle-handle {
+    background: linear-gradient(to bottom, var(--bg-color), transparent);
+    padding-top: 12px;
+}
