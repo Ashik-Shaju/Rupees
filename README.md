@@ -15,7 +15,7 @@ A mobile-first, offline-capable Progressive Web App (PWA) for point-of-sale mana
 1. **Host the App**: Push this code to a GitHub repository.
 2. **Enable GitHub Pages**:
    - Go to **Settings** > **Pages**.
-   - Select the `master` branch and the `/(root)` folder.
+   - Select the `main` branch and the `/(root)` folder.
    - Click **Save**.
 3. **Open the Link**: Open the generated URL (e.g., `https://username.github.io/Rupees/`) in your phone's Chrome/Safari.
 4. **Install**:
