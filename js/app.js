@@ -41,28 +41,36 @@ const views = {
     `,
     history: `
         <div class="view active" id="view-history">
-            <div class="dashboard-scroller" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding-bottom: 8px; margin-bottom: 1rem; margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem;">
-                <div class="dashboard-filter-chip active" id="filter-sales" style="border-color: var(--dash-orange); background: var(--dash-orange-light);">
-                    <div class="dash-title" style="color: var(--dash-orange);">Total Sales</div>
-                    <div class="dash-value" id="val-sales">₹0</div>
-                </div>
-                <div class="dashboard-filter-chip" id="filter-net" style="border-color: var(--border-color); background: var(--surface-color);">
-                    <div class="dash-title" style="color: var(--dash-yellow);">Net Received</div>
-                    <div class="dash-value" id="val-net">₹0</div>
-                </div>
-                <div class="dashboard-filter-chip" id="filter-pending" style="border-color: var(--border-color); background: var(--surface-color);">
-                    <div class="dash-title" style="color: var(--dash-red);">Pending Balance</div>
-                    <div class="dash-value" id="val-pending">₹0</div>
-                </div>
-                <div class="dashboard-filter-chip" id="filter-return" style="border-color: var(--border-color); background: var(--surface-color);">
-                    <div class="dash-title" style="color: var(--dash-blue);">Return Amount</div>
-                    <div class="dash-value" id="val-return">₹0</div>
-                </div>
-                <div class="dashboard-filter-chip" id="filter-savings" style="border-color: var(--border-color); background: var(--surface-color);">
-                    <div class="dash-title" style="color: var(--dash-green);">Savings</div>
-                    <div class="dash-value" id="val-savings">₹0</div>
+            <div id="history-dashboard-container">
+                <div class="dashboard-scroller" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding-bottom: 8px; margin-bottom: 1rem; margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem;">
+                    <div class="dashboard-filter-chip active" id="filter-sales" style="border-color: var(--dash-orange); background: var(--dash-orange-light);">
+                        <div class="dash-title" style="color: var(--dash-orange);">Total Sales</div>
+                        <div class="dash-value" id="val-sales">₹0</div>
+                    </div>
+                    <div class="dashboard-filter-chip" id="filter-net" style="border-color: var(--border-color); background: var(--surface-color);">
+                        <div class="dash-title" style="color: var(--dash-yellow);">Net Received</div>
+                        <div class="dash-value" id="val-net">₹0</div>
+                    </div>
+                    <div class="dashboard-filter-chip" id="filter-pending" style="border-color: var(--border-color); background: var(--surface-color);">
+                        <div class="dash-title" style="color: var(--dash-red);">Pending Balance</div>
+                        <div class="dash-value" id="val-pending">₹0</div>
+                    </div>
+                    <div class="dashboard-filter-chip" id="filter-return" style="border-color: var(--border-color); background: var(--surface-color);">
+                        <div class="dash-title" style="color: var(--dash-blue);">Return Amount</div>
+                        <div class="dash-value" id="val-return">₹0</div>
+                    </div>
+                    <div class="dashboard-filter-chip" id="filter-savings" style="border-color: var(--border-color); background: var(--surface-color);">
+                        <div class="dash-title" style="color: var(--dash-green);">Savings</div>
+                        <div class="dash-value" id="val-savings">₹0</div>
+                    </div>
                 </div>
             </div>
+            
+            <div class="dashboard-toggle-handle" id="history-dash-toggle">
+                <div class="handle-bar"></div>
+                <div class="handle-text" id="dash-toggle-text">Swipe up to Hide Summary</div>
+            </div>
+
             <div style="margin-bottom: 0.2rem; text-align: center;">
                 <h2 style="font-size: 1.1rem; margin-bottom: 0.2rem; color: var(--text-muted); width: 100%;">Transactions</h2>
             </div>
@@ -1414,12 +1422,46 @@ function renderCheckoutPills() {
 function initHistoryTab() {
     window.selectedHistoryIds = window.selectedHistoryIds || new Set();
     window.isHistorySelectMode = window.isHistorySelectMode || false;
+    window.isDashboardCollapsed = window.isDashboardCollapsed || false;
 
     window.currentHistoryFilter = window.currentHistoryFilter || 'sales';
 
     const history = Store.getHistory();
     const listContainer = document.getElementById('history-list');
     const toggleBtn = document.getElementById('btn-toggle-history-select');
+    const dashContainer = document.getElementById('history-dashboard-container');
+    const dashToggle = document.getElementById('history-dash-toggle');
+    const dashText = document.getElementById('dash-toggle-text');
+    const viewHistory = document.getElementById('view-history');
+
+    const setDashboardState = (collapsed) => {
+        window.isDashboardCollapsed = collapsed;
+        if (collapsed) {
+            dashContainer.classList.add('collapsed');
+            viewHistory.classList.add('dashboard-collapsed');
+            dashText.textContent = 'Swipe down to Show Summary';
+        } else {
+            dashContainer.classList.remove('collapsed');
+            viewHistory.classList.remove('dashboard-collapsed');
+            dashText.textContent = 'Swipe up to Hide Summary';
+        }
+    };
+
+    if (dashToggle) {
+        dashToggle.onclick = () => setDashboardState(!window.isDashboardCollapsed);
+
+        // Touch gestures for swiping
+        let touchStartY = 0;
+        dashToggle.ontouchstart = (e) => touchStartY = e.touches[0].clientY;
+        dashToggle.ontouchend = (e) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            if (touchStartY - touchEndY > 30) setDashboardState(true); // Swipe up
+            if (touchEndY - touchStartY > 30) setDashboardState(false); // Swipe down
+        };
+
+        // Initialize state
+        setDashboardState(window.isDashboardCollapsed);
+    }
 
     if (history.length === 0) {
         listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No previous transactions.</div>';
