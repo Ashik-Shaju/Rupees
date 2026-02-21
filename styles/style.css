@@ -462,6 +462,10 @@ select.form-control {
     max-height: 400px;
 }
 
+#history-dashboard-container.no-transition {
+    transition: none !important;
+}
+
 #history-dashboard-container.collapsed {
     max-height: 0;
     margin-bottom: 0 !important;
@@ -473,7 +477,8 @@ select.form-control {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 12px 0;
+    padding: 4px 0 8px 0;
+    /* Reduced padding */
     cursor: pointer;
 }
 

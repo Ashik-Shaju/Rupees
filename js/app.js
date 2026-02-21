@@ -42,7 +42,7 @@ const views = {
     history: `
         <div class="view active" id="view-history">
             <div id="history-dashboard-container">
-                <div class="dashboard-scroller" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding-bottom: 8px; margin-bottom: 1rem; margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem;">
+                <div class="dashboard-scroller" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding-bottom: 8px; margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem;">
                     <div class="dashboard-filter-chip active" id="filter-sales" style="border-color: var(--dash-orange); background: var(--dash-orange-light);">
                         <div class="dash-title" style="color: var(--dash-orange);">Total Sales</div>
                         <div class="dash-value" id="val-sales">₹0</div>
@@ -1434,8 +1434,15 @@ function initHistoryTab() {
     const dashText = document.getElementById('dash-toggle-text');
     const viewHistory = document.getElementById('view-history');
 
-    const setDashboardState = (collapsed) => {
+    const setDashboardState = (collapsed, instant = false) => {
         window.isDashboardCollapsed = collapsed;
+
+        if (instant) {
+            dashContainer.classList.add('no-transition');
+            // Force reflow
+            void dashContainer.offsetHeight;
+        }
+
         if (collapsed) {
             dashContainer.classList.add('collapsed');
             viewHistory.classList.add('dashboard-collapsed');
@@ -1444,6 +1451,13 @@ function initHistoryTab() {
             dashContainer.classList.remove('collapsed');
             viewHistory.classList.remove('dashboard-collapsed');
             dashText.textContent = 'Swipe up to Hide Summary';
+        }
+
+        if (instant) {
+            // Remove the utility class after a frame to restore transitions for future moves
+            setTimeout(() => {
+                dashContainer.classList.remove('no-transition');
+            }, 50);
         }
     };
 
@@ -1481,7 +1495,7 @@ function initHistoryTab() {
         });
 
         // Initialize state
-        setDashboardState(window.isDashboardCollapsed);
+        setDashboardState(window.isDashboardCollapsed, true);
     }
 
     if (history.length === 0) {
