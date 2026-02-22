@@ -374,6 +374,9 @@ function openProductModal(product = null) {
                 if (pr.dateAdded) parts.push(`Added: ${new Date(pr.dateAdded).toLocaleDateString()}`);
                 if (pr.dateModified) parts.push(`Updated: ${new Date(pr.dateModified).toLocaleDateString()}`);
                 if (pr.previousPrice) parts.push(`Old: ₹${pr.previousPrice}`);
+                if (pr.minQty) parts.push(`Min Qty: ${pr.minQty}`);
+                if (pr.minPrice) parts.push(`Min Price: ₹${pr.minPrice}`);
+
                 if (parts.length > 0) {
                     detailsHtml = `<div style="font-size:0.75rem; color:var(--text-muted); font-weight:normal; margin-top:2px;">${parts.join(' | ')}</div>`;
                 }
@@ -439,14 +442,20 @@ function openProductModal(product = null) {
                 <div class="form-group">
                     <label>Base Prices</label>
                     <div id="prices-list" style="margin-bottom: 8px;"></div>
-                    <div style="display:flex; gap:6px; margin-top:8px;">
-                        <input type="number" id="new-price" class="form-control" placeholder="Price" style="flex: 2; min-width: 0; padding: 6px 8px;">
+                    <div style="display:flex; gap:6px;">
+                        <input type="number" id="new-price" class="form-control" placeholder="₹ Base Price" style="flex: 1.5; min-width: 0; padding: 6px 8px;">
+                        <span style="display:flex; align-items:center; color:var(--text-muted);">/</span>
                         <select id="new-unit" class="form-control" style="flex: 1; min-width: 0; padding: 6px 8px;">
-                            <option value="kg">per kg</option>
-                            <option value="g">per g</option>
-                            <option value="pkt">per pkt</option>
-                            <option value="box">per box</option>
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="item">item</option>
+                            <option value="box">box</option>
+                            <option value="pkg">pkg</option>
                         </select>
+                    </div>
+                    <div style="display:flex; gap:6px; margin-top: 6px;">
+                        <input type="number" id="new-min-qty" class="form-control" placeholder="Min Qty (Opt)" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                        <input type="number" id="new-min-price" class="form-control" placeholder="Min ₹ (Opt)" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
                         <button id="btn-add-price" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main);">Add</button>
                     </div>
                 </div>
@@ -547,6 +556,8 @@ function openProductModal(product = null) {
 
             document.getElementById('new-price').value = pr.price;
             document.getElementById('new-unit').value = pr.unit;
+            document.getElementById('new-min-qty').value = pr.minQty || '';
+            document.getElementById('new-min-price').value = pr.minPrice || '';
             document.getElementById('new-price').focus();
 
             editingPrice = currentPrices.splice(idx, 1)[0];
@@ -570,8 +581,13 @@ function openProductModal(product = null) {
 
     document.getElementById('btn-add-price').addEventListener('click', () => {
         const pInput = document.getElementById('new-price');
+        const mqInput = document.getElementById('new-min-qty');
+        const mpInput = document.getElementById('new-min-price');
+
         const price = parseFloat(pInput.value);
         const unit = document.getElementById('new-unit').value;
+        const minQty = parseFloat(mqInput.value);
+        const minPrice = parseFloat(mpInput.value);
 
         // Prevent adding multiple base prices for the same unit "type"
         const isWeight = unit === 'kg' || unit === 'g';
@@ -587,6 +603,9 @@ function openProductModal(product = null) {
 
         if (!isNaN(price) && price > 0) {
             let newPr = { price, unit };
+            if (!isNaN(minQty) && minQty > 0) newPr.minQty = minQty;
+            if (!isNaN(minPrice) && minPrice > 0) newPr.minPrice = minPrice;
+
             if (editingPrice) {
                 if (editingPrice.dateAdded) newPr.dateAdded = editingPrice.dateAdded;
                 if (editingPrice.dateModified) newPr.dateModified = editingPrice.dateModified;
@@ -598,6 +617,8 @@ function openProductModal(product = null) {
             currentPrices.push(newPr);
             renderPrices();
             pInput.value = '';
+            mqInput.value = '';
+            mpInput.value = '';
 
             if (currentPresets.length === 0) populateDefaultPresets();
         }
@@ -957,6 +978,7 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
                             ${unitOptionsHtml}
                         </select>
                     </div>
+                    <div id="calc-constraints-hint" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;"></div>
                     ${presetsHtml}
                 </div>
                 
@@ -967,6 +989,8 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
                     <input type="number" id="calc-price" class="form-control" placeholder="Calculate backwards" value="${initialCost}">
                 </div>
                 
+                <div id="calc-validation-hint" style="font-size: 0.85rem; color: var(--danger-color); margin-top: 8px; display: none; font-weight: 500; text-align: center;"></div>
+
                 ${addonsHtml}
 
                 <div style="display: flex; gap: 8px; margin-top: 1.5rem;">
@@ -1007,20 +1031,28 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
     // Helper to dynamically find the correct base price given the currently selected unit
     const getBaseTier = (unit) => {
         let tier = pPrices.find(pr => pr.unit === unit);
-        if (tier) return { tierPrice: tier.price, multiplier: 1 };
+        if (tier) return { tierPrice: tier.price, multiplier: 1, minQty: tier.minQty, minPrice: tier.minPrice };
 
         // Check natural conversions if direct match not found
         if (unit === 'g') {
             tier = pPrices.find(pr => pr.unit === 'kg');
-            if (tier) return { tierPrice: tier.price, multiplier: 1 / 1000 };
+            if (tier) return { tierPrice: tier.price, multiplier: 1 / 1000, minQty: tier.minQty ? tier.minQty * 1000 : null, minPrice: tier.minPrice };
         }
         if (unit === 'kg') {
             tier = pPrices.find(pr => pr.unit === 'g');
-            if (tier) return { tierPrice: tier.price, multiplier: 1000 };
+            if (tier) return { tierPrice: tier.price, multiplier: 1000, minQty: tier.minQty ? tier.minQty / 1000 : null, minPrice: tier.minPrice };
         }
 
         // Fallback
-        return { tierPrice: pPrices[0].price, multiplier: 1 };
+        return { tierPrice: pPrices[0].price, multiplier: 1, minQty: pPrices[0].minQty, minPrice: pPrices[0].minPrice };
+    };
+
+    // Helper to get formatted constraints message
+    const getConstraintsMessage = (tier) => {
+        let msgs = [];
+        if (tier.minQty) msgs.push(`Min ${tier.minQty} ${unitSelect.value}`);
+        if (tier.minPrice) msgs.push(`Min ₹${tier.minPrice}`);
+        return msgs.length > 0 ? `Constraints: ${msgs.join(', ')}` : '';
     };
 
     // Core Calculation Logic
@@ -1032,31 +1064,60 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
         const uPrice = baseTier.tierPrice;
         const multiplier = baseTier.multiplier;
 
+        let targetQty = qtyInput.value ? parseFloat(qtyInput.value) : 0;
+        let targetCost = priceInput.value ? parseFloat(priceInput.value) : 0;
+        let validationMsg = '';
+
         if (source === 'qty' || source === 'addon') {
             if (qtyInput.value) {
-                const qty = parseFloat(qtyInput.value);
-                const basePrice = qty * multiplier * uPrice;
-                priceInput.value = (basePrice + addonsTotal).toFixed(2);
+                const basePrice = targetQty * multiplier * uPrice;
+                targetCost = basePrice + addonsTotal;
+                priceInput.value = targetCost.toFixed(2);
             } else if (source === 'qty') {
                 priceInput.value = '';
+                targetCost = 0;
             }
         } else if (source === 'price') {
             if (priceInput.value) {
-                const totalCost = parseFloat(priceInput.value);
                 // Backwards calc: subtract addons, then divide to find qty
-                const baseCost = Math.max(0, totalCost - addonsTotal);
-                qtyInput.value = (baseCost / (uPrice * multiplier)).toFixed(3);
+                const baseCost = Math.max(0, targetCost - addonsTotal);
+                targetQty = baseCost / (uPrice * multiplier);
+                qtyInput.value = targetQty.toFixed(3);
             } else {
                 qtyInput.value = '';
+                targetQty = 0;
             }
         } else if (source === 'unit') {
+            document.getElementById('calc-constraints-hint').textContent = getConstraintsMessage(baseTier);
             if (qtyInput.value) calculate('qty');
+        }
+
+        // Check Constraints visually (do not hard enforce on typings, only on save or blur)
+        if (targetQty > 0 || targetCost > 0) {
+            if (baseTier.minQty && targetQty < baseTier.minQty) {
+                validationMsg = `Minimum quantity is ${baseTier.minQty} ${currentUnit}`;
+            } else if (baseTier.minPrice && targetCost < baseTier.minPrice) {
+                validationMsg = `Minimum price is ₹${baseTier.minPrice}`;
+            }
+        }
+
+        const hintEl = document.getElementById('calc-validation-hint');
+        if (hintEl) {
+            hintEl.textContent = validationMsg;
+            hintEl.style.display = validationMsg ? 'block' : 'none';
         }
     };
 
     qtyInput.addEventListener('input', () => calculate('qty'));
     priceInput.addEventListener('input', () => calculate('price'));
     unitSelect.addEventListener('change', () => calculate('unit'));
+
+    // Update constraints text on init
+    setTimeout(() => {
+        const initialTier = getBaseTier(unitSelect.value);
+        const hintEl = document.getElementById('calc-constraints-hint');
+        if (hintEl) hintEl.textContent = getConstraintsMessage(initialTier);
+    }, 0);
 
     addonCheckboxes.forEach(cb => {
         cb.addEventListener('change', () => {
@@ -1096,9 +1157,31 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
     });
 
     document.getElementById('btn-calc-ok').addEventListener('click', () => {
-        const cost = parseFloat(priceInput.value);
-        const qty = parseFloat(qtyInput.value);
+        let cost = parseFloat(priceInput.value);
+        let qty = parseFloat(qtyInput.value);
         if (isNaN(cost) || isNaN(qty) || cost <= 0) return alert('Invalid entry');
+
+        const baseTier = getBaseTier(unitSelect.value);
+
+        // Enforce Minimums on Save
+        let constrained = false;
+        let originalQty = qty;
+        let originalCost = cost;
+
+        if (baseTier.minQty && qty < baseTier.minQty) {
+            qtyInput.value = baseTier.minQty;
+            calculate('qty');
+            cost = parseFloat(priceInput.value);
+            qty = parseFloat(qtyInput.value);
+            constrained = true;
+        }
+        if (baseTier.minPrice && cost < baseTier.minPrice) {
+            priceInput.value = baseTier.minPrice;
+            calculate('price');
+            cost = parseFloat(priceInput.value);
+            qty = parseFloat(qtyInput.value);
+            constrained = true;
+        }
 
         const selectedAddons = [];
         addonCheckboxes.forEach(cb => {
@@ -1110,8 +1193,6 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
             }
         });
 
-        const baseTier = getBaseTier(unitSelect.value);
-
         const cartItem = {
             productId: product.id,
             name: product.name,
@@ -1121,6 +1202,11 @@ function openCalculatorModal(product, existingCartItemIndex = -1) {
             addons: selectedAddons,
             basePrice: baseTier.tierPrice
         };
+
+        if (constrained) {
+            cartItem.originalQty = originalQty;
+            cartItem.originalCost = originalCost;
+        }
 
         if (isEdit) {
             Store.cart[existingCartItemIndex] = cartItem;
@@ -1176,6 +1262,10 @@ function openSettlementModal(tx, onComplete) {
                     <div style="flex: 1; text-align: right; font-weight: 500;">₹${a.price}</div>
                 </div>
             `).join('');
+        }
+
+        if (i.originalQty) {
+            html += `<div style="font-size: 0.75rem; color: var(--danger-color); margin-top: 4px; font-weight: 500;">* Min constraint applied (Original: ${i.originalQty}${i.unit})</div>`;
         }
 
         // Add a bottom margin after the full block
@@ -1393,9 +1483,16 @@ function renderCheckoutPills() {
         if (item.addons && item.addons.length > 0) {
             addonNames = ` <span style="font-size:0.75rem; color: #fff8;">(+ ${item.addons.map(a => `${a.name} ₹${a.price}`).join(', ')})</span>`;
         }
+
+        let minNote = '';
+        if (item.originalQty) minNote = `<div style="font-size:0.7rem; color: #fff8; margin-top:2px;">Original req: ${item.originalQty}${item.unit}</div>`;
+
         return `
-            <div class="pill" data-idx="${idx}" style="background: var(--accent-light); color: var(--accent-primary); padding: 4px 12px; border-radius: 99px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; border: 1px solid var(--accent-primary);">
-                ${item.name} (${item.qty}${item.unit}) ${addonNames} <span style="color:var(--text-main); margin-left:4px;">₹${item.cost.toFixed(2)}</span>
+            <div class="pill" data-idx="${idx}" style="background: var(--accent-light); color: var(--accent-primary); padding: 6px 14px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; justify-content: center; border: 1px solid var(--accent-primary);">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    ${item.name} (${item.qty}${item.unit}) ${addonNames} <span style="color:var(--text-main); margin-left:4px;">₹${item.cost.toFixed(2)}</span>
+                </div>
+                ${minNote}
             </div>
         `;
     }).join('');
