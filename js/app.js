@@ -21,10 +21,11 @@ const views = {
     checkout: `
         <div class="view active" id="view-checkout">
             <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text-muted)">Products</h2>
-            <div style="position: relative; margin-bottom: 12px; margin-right: 6px;">
+            <div style="position: relative; margin-bottom: 8px; margin-right: 6px;">
                 <input type="text" id="search-checkout" class="form-control" placeholder="Search products..." style="padding-left: 36px; border-radius: 99px; background: var(--surface-color);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
+            <div id="checkout-category-chips" style="display:flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;"></div>
             <div id="checkout-product-list" style="overflow-y: auto; flex: 1; padding-right: 6px;"></div>
             
             <!-- Bottom Sheet for Totals -->
@@ -111,10 +112,11 @@ const views = {
                     <button id="btn-toggle-select" style="background:var(--accent-light); border:1px solid var(--accent-primary); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--accent-primary); padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Select</button>
                 </div>
             </div>
-            <div style="position: relative; margin-bottom: 12px; margin-right: 6px;">
+            <div style="position: relative; margin-bottom: 8px; margin-right: 6px;">
                 <input type="text" id="search-products" class="form-control" placeholder="Search products..." style="padding-left: 36px; border-radius: 99px; background: var(--surface-color);">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
+            <div id="products-category-chips" style="display:flex; gap: 8px; overflow-x: auto; margin-bottom: 12px; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none;"></div>
             <div id="products-list-container" style="overflow-y: auto; flex: 1; padding-right: 6px; padding-bottom: 80px;"></div>
             <button class="fab" id="fab-add-product">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -163,17 +165,18 @@ function initProductsTab() {
 
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            renderProductsList(listContainer, e.target.value);
+            renderProductsList(listContainer, e.target.value, window.activeProductCategory);
         });
     }
 
-    renderProductsList(listContainer, searchInput ? searchInput.value : '');
+    renderProductsList(listContainer, searchInput ? searchInput.value : '', window.activeProductCategory);
 }
 
-function renderProductsList(container, searchQuery = '') {
+function renderProductsList(container, searchQuery = '', activeCategory = 'All') {
     // Keep track of state
     window.selectedProductIds = window.selectedProductIds || new Set();
     window.isSelectMode = window.isSelectMode || false;
+    window.activeProductCategory = activeCategory;
 
     const products = Store.getProducts();
 
@@ -268,11 +271,47 @@ function renderProductsList(container, searchQuery = '') {
     const validIds = new Set(products.map(p => p.id));
     window.selectedProductIds = new Set([...window.selectedProductIds].filter(id => validIds.has(id)));
 
-    // Apply strict search filtering
+    // Apply search and category filtering
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const filteredProducts = normalizedQuery
-        ? products.filter(p => p.name.toLowerCase().includes(normalizedQuery))
-        : products;
+
+    // First figure out unique categories
+    const categoriesSet = new Set();
+    products.forEach(p => {
+        if (p.category) categoriesSet.add(p.category);
+    });
+    const categories = ['All', ...Array.from(categoriesSet).sort()];
+
+    // Render chips
+    const chipsContainer = document.getElementById('products-category-chips');
+    if (chipsContainer) {
+        if (categories.length > 1) {
+            chipsContainer.style.display = 'flex';
+            chipsContainer.innerHTML = categories.map(cat => {
+                const isActive = cat === window.activeProductCategory;
+                const bg = isActive ? 'var(--accent-light)' : 'var(--surface-color)';
+                const border = isActive ? 'var(--accent-primary)' : 'var(--border-color)';
+                const color = isActive ? 'var(--accent-primary)' : 'var(--text-main)';
+                return `<div class="cat-chip" data-cat="${cat}" style="white-space:nowrap; background:${bg}; border:1px solid ${border}; color:${color}; padding:4px 12px; border-radius:16px; font-size:0.8rem; font-weight:600; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:all 0.1s;">${cat}</div>`;
+            }).join('');
+
+            // Re-bind click listeners for chips
+            chipsContainer.querySelectorAll('.cat-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const searchInput = document.getElementById('search-products');
+                    renderProductsList(container, searchInput ? searchInput.value : '', chip.dataset.cat);
+                });
+            });
+        } else {
+            chipsContainer.style.display = 'none';
+        }
+    }
+
+    // Filter products
+    const filteredProducts = products.filter(p => {
+        const matchQuery = !normalizedQuery || p.name.toLowerCase().includes(normalizedQuery);
+        const matchCat = window.activeProductCategory === 'All' || p.category === window.activeProductCategory;
+        return matchQuery && matchCat;
+    });
 
     // Render logic
     let html = '';
@@ -450,14 +489,31 @@ function openProductModal(product = null) {
         `).join('');
     };
 
+    const allProducts = Store.getProducts();
+    const categoriesSet = new Set();
+    allProducts.forEach(p => {
+        if (p.category) categoriesSet.add(p.category);
+    });
+    const categoriesHtml = Array.from(categoriesSet).sort().map(cat => `<option value="${cat}">`).join('');
+
     const modalHtml = `
         <div class="modal-overlay active" id="product-modal">
             <div class="modal" style="max-height: 90vh; overflow-y: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
                 <h3 class="modal-title">${isEdit ? 'Edit Product' : 'Add New Product'}</h3>
                 
-                <div class="form-group">
-                    <label>Product Name</label>
-                    <input type="text" id="prod-name" class="form-control" value="${product ? product.name : ''}" placeholder="e.g. Apple">
+                <datalist id="category-options">
+                    ${categoriesHtml}
+                </datalist>
+
+                <div style="display:flex; gap: 8px;">
+                    <div class="form-group" style="flex: 2;">
+                        <label>Product Name</label>
+                        <input type="text" id="prod-name" class="form-control" value="${product ? product.name : ''}" placeholder="e.g. Apple">
+                    </div>
+                    <div class="form-group" style="flex: 1.5;">
+                        <label>Category (Opt)</label>
+                        <input type="text" id="prod-category" list="category-options" class="form-control" value="${product && product.category ? product.category : ''}" placeholder="e.g. Dairy">
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -748,6 +804,7 @@ function openProductModal(product = null) {
         const finalProduct = {
             id: isEdit ? product.id : Date.now().toString(),
             name,
+            category: document.getElementById('prod-category').value.trim(),
             prices: finalPrices,
             presets: currentPresets,
             addons: currentAddons
@@ -822,12 +879,12 @@ function initCheckoutTab() {
 
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            renderCheckoutProductList(listContainer, products, e.target.value);
+            renderCheckoutProductList(listContainer, products, e.target.value, window.activeCheckoutCategory);
         });
         // Initial render
-        renderCheckoutProductList(listContainer, products, searchInput.value);
+        renderCheckoutProductList(listContainer, products, searchInput.value, window.activeCheckoutCategory);
     } else {
-        renderCheckoutProductList(listContainer, products, '');
+        renderCheckoutProductList(listContainer, products, '', window.activeCheckoutCategory);
     }
 
     renderCheckoutPills();
@@ -881,11 +938,49 @@ function initCheckoutTab() {
     });
 }
 
-function renderCheckoutProductList(container, products, searchQuery = '') {
+function renderCheckoutProductList(container, products, searchQuery = '', activeCategory = 'All') {
+    window.activeCheckoutCategory = activeCategory;
+
+    // Apply search and category filtering
     const normalizedQuery = searchQuery.trim().toLowerCase();
-    const filteredProducts = normalizedQuery
-        ? products.filter(p => p.name.toLowerCase().includes(normalizedQuery))
-        : products;
+
+    // First figure out unique categories
+    const categoriesSet = new Set();
+    products.forEach(p => {
+        if (p.category) categoriesSet.add(p.category);
+    });
+    const categories = ['All', ...Array.from(categoriesSet).sort()];
+
+    // Render chips
+    const chipsContainer = document.getElementById('checkout-category-chips');
+    if (chipsContainer) {
+        if (categories.length > 1) {
+            chipsContainer.style.display = 'flex';
+            chipsContainer.innerHTML = categories.map(cat => {
+                const isActive = cat === window.activeCheckoutCategory;
+                const bg = isActive ? 'var(--accent-light)' : 'var(--surface-color)';
+                const border = isActive ? 'var(--accent-primary)' : 'var(--border-color)';
+                const color = isActive ? 'var(--accent-primary)' : 'var(--text-main)';
+                return `<div class="cat-chip" data-cat="${cat}" style="white-space:nowrap; background:${bg}; border:1px solid ${border}; color:${color}; padding:4px 12px; border-radius:16px; font-size:0.8rem; font-weight:600; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:all 0.1s;">${cat}</div>`;
+            }).join('');
+
+            // Re-bind click listeners for chips
+            chipsContainer.querySelectorAll('.cat-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const searchInput = document.getElementById('search-checkout');
+                    renderCheckoutProductList(container, products, searchInput ? searchInput.value : '', chip.dataset.cat);
+                });
+            });
+        } else {
+            chipsContainer.style.display = 'none';
+        }
+    }
+
+    const filteredProducts = products.filter(p => {
+        const matchQuery = !normalizedQuery || p.name.toLowerCase().includes(normalizedQuery);
+        const matchCat = window.activeCheckoutCategory === 'All' || p.category === window.activeCheckoutCategory;
+        return matchQuery && matchCat;
+    });
 
     if (filteredProducts.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No matching products found.</div>`;
