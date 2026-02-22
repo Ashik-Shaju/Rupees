@@ -532,75 +532,77 @@ function openProductModal(product = null) {
 
     const modalHtml = `
         <div class="modal-overlay active" id="product-modal">
-            <div class="modal" style="max-height: 90vh; overflow-y: visible; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
-                <h3 class="modal-title">${isEdit ? 'Edit Product' : 'Add New Product'}</h3>
+            <div class="modal" style="max-height: 90vh; display: flex; flex-direction: column; overflow-y: hidden;">
+                <h3 class="modal-title" style="flex-shrink: 0;">${isEdit ? 'Edit Product' : 'Add New Product'}</h3>
                 
-                <div style="display:flex; gap: 8px;">
-                    <div class="form-group" style="flex: 2;">
-                        <label>Product Name</label>
-                        <input type="text" id="prod-name" class="form-control" value="${product ? product.name : ''}" placeholder="e.g. Apple">
+                <div style="overflow-y: auto; flex: 1; padding-right: 4px; padding-bottom: 8px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; margin-right: -4px;">
+                    <div style="display:flex; gap: 8px;">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Product Name</label>
+                            <input type="text" id="prod-name" class="form-control" value="${product ? product.name : ''}" placeholder="e.g. Apple">
+                        </div>
+                        <div class="form-group autocomplete-container" style="flex: 1.5;">
+                            <label>Category (Opt)</label>
+                            <input type="text" id="prod-category" class="form-control" value="${product && product.category ? product.category : ''}" placeholder="e.g. Dairy" autocomplete="off">
+                            <div id="category-dropdown" class="autocomplete-dropdown"></div>
+                        </div>
                     </div>
-                    <div class="form-group autocomplete-container" style="flex: 1.5;">
-                        <label>Category (Opt)</label>
-                        <input type="text" id="prod-category" class="form-control" value="${product && product.category ? product.category : ''}" placeholder="e.g. Dairy" autocomplete="off">
-                        <div id="category-dropdown" class="autocomplete-dropdown"></div>
+                    
+                    <div class="form-group">
+                        <label>Base Prices</label>
+                        <div id="prices-list" style="margin-bottom: 8px;"></div>
+                        <div style="display:flex; gap:6px;">
+                            <input type="number" id="new-price" class="form-control" placeholder="₹ Base Price" style="flex: 1.5; min-width: 0; padding: 6px 8px;">
+                            <span style="display:flex; align-items:center; color:var(--text-muted);">/</span>
+                            <select id="new-unit" class="form-control" style="flex: 1; min-width: 0; padding: 6px 8px;">
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="item">item</option>
+                                <option value="box">box</option>
+                                <option value="pkg">pkg</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; gap:6px; margin-top: 6px;">
+                            <input type="number" id="new-min-qty" class="form-control" placeholder="Min Qty (Opt)" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                            <input type="number" id="new-min-price" class="form-control" placeholder="Min ₹ (Opt)" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                            <button id="btn-add-price" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main);">Add</button>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Base Prices</label>
-                    <div id="prices-list" style="margin-bottom: 8px;"></div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="number" id="new-price" class="form-control" placeholder="₹ Base Price" style="flex: 1.5; min-width: 0; padding: 6px 8px;">
-                        <span style="display:flex; align-items:center; color:var(--text-muted);">/</span>
-                        <select id="new-unit" class="form-control" style="flex: 1; min-width: 0; padding: 6px 8px;">
-                            <option value="kg">kg</option>
-                            <option value="g">g</option>
-                            <option value="item">item</option>
-                            <option value="box">box</option>
-                            <option value="pkg">pkg</option>
-                        </select>
-                    </div>
-                    <div style="display:flex; gap:6px; margin-top: 6px;">
-                        <input type="number" id="new-min-qty" class="form-control" placeholder="Min Qty (Opt)" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                        <input type="number" id="new-min-price" class="form-control" placeholder="Min ₹ (Opt)" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                        <button id="btn-add-price" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main);">Add</button>
-                    </div>
-                </div>
 
-                <div class="form-group" style="padding-top: 8px; border-top: 1px solid var(--border-color);">
-                    <label style="display:flex; justify-content:space-between; align-items:center;">
-                        Quick Presets
-                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">For calculator quick-add</span>
-                    </label>
-                    <div id="presets-list" style="margin-bottom: 8px;"></div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="text" id="preset-name" class="form-control" placeholder="Name" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                        <input type="number" id="preset-qty" class="form-control" placeholder="Qty" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                        <select id="preset-unit" class="form-control" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                            <option value="g">g</option>
-                            <option value="kg">kg</option>
-                            <option value="ml">ml</option>
-                            <option value="litre">litre</option>
-                        </select>
-                        <button id="btn-add-preset" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.85rem;">Add</button>
+                    <div class="form-group" style="padding-top: 8px; border-top: 1px solid var(--border-color);">
+                        <label style="display:flex; justify-content:space-between; align-items:center;">
+                            Quick Presets
+                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">For calculator quick-add</span>
+                        </label>
+                        <div id="presets-list" style="margin-bottom: 8px;"></div>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" id="preset-name" class="form-control" placeholder="Name" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                            <input type="number" id="preset-qty" class="form-control" placeholder="Qty" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                            <select id="preset-unit" class="form-control" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                                <option value="g">g</option>
+                                <option value="kg">kg</option>
+                                <option value="ml">ml</option>
+                                <option value="litre">litre</option>
+                            </select>
+                            <button id="btn-add-preset" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main); font-size: 0.85rem;">Add</button>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-group" style="padding-top: 16px; border-top: 1px solid var(--border-color);">
-                    <label style="display:flex; justify-content:space-between; align-items:center;">
-                        Optional Addons
-                        <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">e.g. Bag, Bottle</span>
-                    </label>
-                    <div id="addons-list" style="margin-bottom: 8px;"></div>
-                    <div style="display:flex; gap:6px;">
-                        <input type="text" id="addon-name" class="form-control" placeholder="Name" style="flex: 2; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                        <input type="number" id="addon-price" class="form-control" placeholder="₹ Price" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
-                        <button id="btn-add-addon" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main); font-size:0.85rem;">Add</button>
+                    <div class="form-group" style="padding-top: 16px; border-top: 1px solid var(--border-color); margin-bottom: 0;">
+                        <label style="display:flex; justify-content:space-between; align-items:center;">
+                            Optional Addons
+                            <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">e.g. Bag, Bottle</span>
+                        </label>
+                        <div id="addons-list" style="margin-bottom: 8px;"></div>
+                        <div style="display:flex; gap:6px;">
+                            <input type="text" id="addon-name" class="form-control" placeholder="Name" style="flex: 2; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                            <input type="number" id="addon-price" class="form-control" placeholder="₹ Price" style="flex: 1; min-width: 0; padding: 6px 8px; font-size:0.85rem;">
+                            <button id="btn-add-addon" class="btn" style="flex: 1; min-width: 0; padding: 6px 8px; margin: 0; background: var(--surface-color); border: 1px solid var(--border-color); color: var(--text-main); font-size:0.85rem;">Add</button>
+                        </div>
                     </div>
                 </div>
                 
-                <div style="display:flex; flex-direction:column; gap:8px; margin-top:24px;">
+                <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px; padding-top: 12px; border-top: 1px solid var(--border-color); flex-shrink: 0;">
                     <button class="btn btn-primary" id="btn-save-prod" style="margin:0;">Confirm</button>
                     ${isEdit ? '<button class="btn btn-danger" id="btn-delete-prod" style="margin:0;">Delete Product</button>' : ''}
                     <button class="btn" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-main); margin:0;" onclick="closeModal('product-modal')">Cancel</button>
