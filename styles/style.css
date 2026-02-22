@@ -503,3 +503,35 @@ select.form-control {
     background: linear-gradient(to bottom, var(--bg-color), transparent);
     padding-top: 12px;
 }
+/* --- Custom Autocomplete Dropdown --- */
+.autocomplete-container {
+    position: relative;
+}
+.autocomplete-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 50;
+    display: none;
+}
+.autocomplete-item {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+}
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+.autocomplete-item:hover, .autocomplete-item.focused {
+    background: var(--accent-light);
+    color: var(--accent-primary);
+}

@@ -489,30 +489,28 @@ function openProductModal(product = null) {
         `).join('');
     };
 
+    // Categories for autocomplete
     const allProducts = Store.getProducts();
     const categoriesSet = new Set();
     allProducts.forEach(p => {
         if (p.category) categoriesSet.add(p.category);
     });
-    const categoriesHtml = Array.from(categoriesSet).sort().map(cat => `<option value="${cat}">`).join('');
+    const uniqueCategories = Array.from(categoriesSet).sort();
 
     const modalHtml = `
         <div class="modal-overlay active" id="product-modal">
-            <div class="modal" style="max-height: 90vh; overflow-y: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
+            <div class="modal" style="max-height: 90vh; overflow-y: visible; scroll-behavior: smooth; -webkit-overflow-scrolling: touch;">
                 <h3 class="modal-title">${isEdit ? 'Edit Product' : 'Add New Product'}</h3>
                 
-                <datalist id="category-options">
-                    ${categoriesHtml}
-                </datalist>
-
                 <div style="display:flex; gap: 8px;">
                     <div class="form-group" style="flex: 2;">
                         <label>Product Name</label>
                         <input type="text" id="prod-name" class="form-control" value="${product ? product.name : ''}" placeholder="e.g. Apple">
                     </div>
-                    <div class="form-group" style="flex: 1.5;">
+                    <div class="form-group autocomplete-container" style="flex: 1.5;">
                         <label>Category (Opt)</label>
-                        <input type="text" id="prod-category" list="category-options" class="form-control" value="${product && product.category ? product.category : ''}" placeholder="e.g. Dairy">
+                        <input type="text" id="prod-category" class="form-control" value="${product && product.category ? product.category : ''}" placeholder="e.g. Dairy" autocomplete="off">
+                        <div id="category-dropdown" class="autocomplete-dropdown"></div>
                     </div>
                 </div>
                 
@@ -597,8 +595,43 @@ function openProductModal(product = null) {
     }, 10);
 
     const nameInput = document.getElementById('prod-name');
+    const categoryInput = document.getElementById('prod-category');
+    const categoryDropdown = document.getElementById('category-dropdown');
     const priceInput = document.getElementById('new-price');
     const saveBtn = document.getElementById('btn-save-prod');
+
+    // Autocomplete logic
+    if (categoryInput && categoryDropdown) {
+        const renderDropdown = (query) => {
+            const matches = uniqueCategories.filter(c => c.toLowerCase().includes(query.toLowerCase()));
+            if (matches.length > 0) {
+                categoryDropdown.innerHTML = matches.map(m => `<div class="autocomplete-item">${m}</div>`).join('');
+                categoryDropdown.style.display = 'block';
+
+                categoryDropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+                    item.addEventListener('mousedown', (e) => { // mousedown fires before blur
+                        e.preventDefault();
+                        categoryInput.value = item.textContent;
+                        categoryDropdown.style.display = 'none';
+                    });
+                });
+            } else {
+                categoryDropdown.style.display = 'none';
+            }
+        };
+
+        categoryInput.addEventListener('focus', () => {
+            renderDropdown(categoryInput.value.trim());
+        });
+
+        categoryInput.addEventListener('input', (e) => {
+            renderDropdown(e.target.value.trim());
+        });
+
+        categoryInput.addEventListener('blur', () => {
+            categoryDropdown.style.display = 'none';
+        });
+    }
 
     if (nameInput) {
         nameInput.addEventListener('keydown', (e) => {
