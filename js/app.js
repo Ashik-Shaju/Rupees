@@ -910,7 +910,7 @@ function initCheckoutTab() {
 
     if (products.length === 0) {
         listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No products available. Add some in the Products tab.</div>';
-        if (searchInput) searchInput.style.display = 'none';
+        if (searchInput && searchInput.parentElement) searchInput.parentElement.style.display = 'none';
         return;
     }
 
