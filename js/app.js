@@ -1094,19 +1094,6 @@ function renderCheckoutProductList(container, products, searchQuery = '', active
     });
 }
 
-function updateCheckoutActionsVisibility() {
-    const actionsContainer = document.getElementById('checkout-actions-container');
-    const totalPrice = document.getElementById('checkout-total-price');
-    if (!actionsContainer || !totalPrice) return;
-
-    if (Store.cart.length > 0 || (Store.checkoutRemarks && Store.checkoutRemarks.trim() !== '')) {
-        actionsContainer.style.display = 'flex';
-        totalPrice.style.display = 'inline-block';
-    } else {
-        actionsContainer.style.display = 'none';
-        totalPrice.style.display = 'inline-block'; // Keep total visible even when 0
-    }
-}
 
 function openCalculatorModal(product, existingCartItemIndex = -1) {
     const isEdit = existingCartItemIndex >= 0;
