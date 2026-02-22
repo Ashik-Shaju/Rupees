@@ -503,10 +503,12 @@ select.form-control {
     background: linear-gradient(to bottom, var(--bg-color), transparent);
     padding-top: 12px;
 }
+
 /* --- Custom Autocomplete Dropdown --- */
 .autocomplete-container {
     position: relative;
 }
+
 .autocomplete-dropdown {
     position: absolute;
     top: calc(100% + 4px);
@@ -521,6 +523,7 @@ select.form-control {
     z-index: 50;
     display: none;
 }
+
 .autocomplete-item {
     padding: 8px 12px;
     font-size: 0.9rem;
@@ -528,10 +531,34 @@ select.form-control {
     color: var(--text-main);
     border-bottom: 1px solid var(--border-color);
 }
+
 .autocomplete-item:last-child {
     border-bottom: none;
 }
-.autocomplete-item:hover, .autocomplete-item.focused {
+
+.autocomplete-item:hover,
+.autocomplete-item.focused {
     background: var(--accent-light);
     color: var(--accent-primary);
+}
+
+/* History Advanced Filter Buttons */
+.filter-btn {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    white-space: nowrap;
+}
+
+.filter-btn.active {
+    background: var(--accent-light);
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    font-weight: 600;
 }

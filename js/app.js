@@ -2432,29 +2432,7 @@ function openHistoryFilterModal() {
                     <button class="btn btn-primary" style="flex:1; padding: 8px 12px; font-size: 0.85rem;" id="btn-filter-apply">Apply Filters</button>
                     <button class="btn" style="flex:1; background: var(--bg-color); color: var(--text-main); padding: 8px 12px; font-size: 0.85rem;" onclick="closeModal('filter-modal')">Cancel</button>
                 </div>
-            </div>
-        </div>
-        <style>
-            .filter-btn {
-                background: var(--surface-color);
-                border: 1px solid var(--border-color);
-                color: var(--text-main);
-                padding: 8px 12px;
-                border-radius: 99px;
-                font-size: 0.85rem;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                flex: 1;
-                white-space: nowrap;
-            }
-            .filter-btn.active {
-                background: var(--accent-light);
-                color: var(--accent-primary);
-                border-color: var(--accent-primary);
-                font-weight: 600;
-            }
-        </style>
-    `;
+            `;
 
     modalContainer.innerHTML = modalHtml;
 
