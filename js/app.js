@@ -29,14 +29,14 @@ const views = {
             <div id="checkout-product-list" style="overflow-y: auto; flex: 1; padding-right: 6px;"></div>
             
             <!-- Bottom Sheet for Totals -->
-            <div id="checkout-totals-sheet" style="background: var(--surface-color); border-top: 1px solid var(--border-color); border-radius: 16px 16px 0 0; padding: 1rem; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); margin: 0 -1rem -1rem -1rem;">
+            <div id="checkout-totals-sheet" style="background: var(--surface-color); border-top: 1px solid var(--border-color); border-radius: 16px 16px 0 0; padding: 1rem; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); margin: 0 -1rem -1rem -1rem; display: none;">
                 <input type="text" id="checkout-remarks" class="form-control" style="margin-bottom: 1rem; font-size: 0.9rem; padding: 0.5rem;" placeholder="Remarks (optional, e.g. buyer's name)">
                 <div style="display:flex; flex-wrap:wrap; gap: 8px; margin-bottom: 1rem; max-height: 100px; overflow-y: auto; padding-right: 6px;" id="checkout-pills">
                     <!-- Pills go here -->
                 </div>
                 <div class="flex-between" style="align-items: center;">
                     <span style="font-size: 1.5rem; font-weight: 700;">Total = <span id="checkout-total-price" style="color: var(--accent-primary)">₹0</span></span>
-                    <div id="checkout-actions-container" style="display: none; gap: 16px;">
+                    <div id="checkout-actions-container" style="display: flex; gap: 16px;">
                         <button class="btn" style="width: auto; padding: 0.5rem 1rem; border-radius: 99px; background: rgba(244, 67, 54, 0.1); color: var(--danger-color); border: 1px solid var(--danger-color);" id="btn-clear-cart">Clear</button>
                         <button class="btn btn-primary" style="width: auto; padding: 0.5rem 1.5rem; border-radius: 99px;" id="btn-save-transaction">Ok</button>
                     </div>
@@ -940,6 +940,7 @@ function initCheckoutTab() {
     }
 
     renderCheckoutPills();
+    updateCheckoutActionsVisibility();
 
     document.getElementById('btn-clear-cart').addEventListener('click', () => {
         if (Store.cart.length === 0 && !Store.checkoutRemarks) return;
@@ -1655,17 +1656,20 @@ function openSettlementModal(tx, onComplete) {
 }
 
 function updateCheckoutActionsVisibility() {
-    const actionsContainer = document.getElementById('checkout-actions-container');
-    if (!actionsContainer) return;
+    const totalsSheet = document.getElementById('checkout-totals-sheet');
+    if (!totalsSheet) return;
 
-    const remarksInput = document.getElementById('checkout-remarks');
-    const hasRemarks = (remarksInput && remarksInput.value.trim().length > 0) || Store.checkoutRemarks.trim().length > 0;
     const hasCartItems = Store.cart.length > 0;
 
-    if (hasRemarks || hasCartItems) {
-        actionsContainer.style.display = 'flex';
+    if (hasCartItems) {
+        totalsSheet.style.display = 'block';
     } else {
-        actionsContainer.style.display = 'none';
+        totalsSheet.style.display = 'none';
+
+        // Also clear remarks if cart is emptied to keep state clean
+        Store.checkoutRemarks = '';
+        const remarksInput = document.getElementById('checkout-remarks');
+        if (remarksInput) remarksInput.value = '';
     }
 }
 
@@ -2330,6 +2334,15 @@ window.addEventListener('load', () => {
     if (modalContainer) {
         modalObserver.observe(modalContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     }
+
+    // Attempt to handle virtual keyboard scrolling for all inputs
+    document.body.addEventListener('focus', (e) => {
+        if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'textarea') {
+            setTimeout(() => {
+                e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300); // brief delay to allow virtual keyboard to appear
+        }
+    }, true);
 });
 
 // Handle physical back button / swipe back

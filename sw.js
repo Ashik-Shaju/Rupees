@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rupees-v18';
+const CACHE_NAME = 'rupees-v20';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
