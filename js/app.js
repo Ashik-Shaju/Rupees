@@ -1500,7 +1500,13 @@ function initHistoryTab() {
 
     if (history.length === 0) {
         listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No previous transactions.</div>';
+
+        window.isHistorySelectMode = false;
         if (toggleBtn) toggleBtn.style.display = 'none';
+        const selectAllBtn = document.getElementById('btn-toggle-history-select-all');
+        if (selectAllBtn) selectAllBtn.style.display = 'none';
+        const bulkBar = document.getElementById('bulk-history-action-bar');
+        if (bulkBar) bulkBar.classList.remove('visible');
 
         // Reset dashboard values
         document.getElementById('val-sales').textContent = '₹0';
