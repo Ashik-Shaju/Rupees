@@ -136,7 +136,7 @@ function init() {
     }
 
     if (!history.state || history.state.appState !== 'tab') {
-        history.replaceState({ appState: 'tab', tab: initialTab }, '', '#' + initialTab);
+        history.replaceState({ appState: 'tab', tab: initialTab, isHome: initialTab === 'checkout' }, '', '#' + initialTab);
     }
 
     navItems.forEach(n => n.classList.remove('active'));
@@ -154,7 +154,21 @@ function init() {
             navItems.forEach(n => n.classList.remove('active'));
             e.currentTarget.classList.add('active');
 
-            history.pushState({ appState: 'tab', tab: tab }, '', '#' + tab);
+            const isHome = tab === 'checkout';
+            const wasHome = history.state && history.state.tab === 'checkout';
+
+            if (isHome) {
+                // If going TO home from somewhere else, clear history down to home if possible, 
+                // or just replace state to avoid building a stack of homes.
+                history.replaceState({ appState: 'tab', tab: tab, isHome: true }, '', '#' + tab);
+            } else if (wasHome) {
+                // If leaving home, push a new state so back button returns to home
+                history.pushState({ appState: 'tab', tab: tab, isHome: false }, '', '#' + tab);
+            } else {
+                // If moving between non-home tabs, just replace the current state
+                history.replaceState({ appState: 'tab', tab: tab, isHome: false }, '', '#' + tab);
+            }
+
             loadTab(tab);
         });
     });
@@ -2358,7 +2372,8 @@ window.addEventListener('popstate', (e) => {
             loadTab(tab);
         }
     } else if (!e.state) {
-        history.replaceState({ appState: 'tab', tab: 'checkout' }, '', '#checkout');
+        // Fallback or external back navigation
+        history.replaceState({ appState: 'tab', tab: 'checkout', isHome: true }, '', '#checkout');
         navItems.forEach(n => n.classList.remove('active'));
         const targetNav = document.querySelector(`.nav-item[data-tab="checkout"]`);
         if (targetNav) targetNav.classList.add('active');
