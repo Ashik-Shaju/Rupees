@@ -127,22 +127,41 @@ const views = {
 
 // Initialize App
 function init() {
-    loadTab('checkout'); // Load default tab
+    let initialTab = 'checkout';
+    if (location.hash) {
+        const hashTab = location.hash.substring(1);
+        if (['checkout', 'products', 'history'].includes(hashTab)) {
+            initialTab = hashTab;
+        }
+    }
+
+    if (!history.state || history.state.appState !== 'tab') {
+        history.replaceState({ appState: 'tab', tab: initialTab }, '', '#' + initialTab);
+    }
+
+    navItems.forEach(n => n.classList.remove('active'));
+    const initialNav = document.querySelector(`.nav-item[data-tab="${initialTab}"]`);
+    if (initialNav) initialNav.classList.add('active');
+
+    loadTab(initialTab);
 
     // Tab switching listener
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
             const tab = e.currentTarget.dataset.tab;
+            if (history.state && history.state.tab === tab) return;
 
             navItems.forEach(n => n.classList.remove('active'));
             e.currentTarget.classList.add('active');
 
+            history.pushState({ appState: 'tab', tab: tab }, '', '#' + tab);
             loadTab(tab);
         });
     });
 }
 
 function loadTab(tabId) {
+    window.currentActiveTab = tabId;
     contentContainer.innerHTML = views[tabId];
 
     // After HTML is injected, we need to initialize functionality for that view
@@ -2285,8 +2304,62 @@ window.closeModal = function (id) {
     if (modal) {
         modal.classList.remove('active');
         setTimeout(() => modal.remove(), 200);
+
+        // Unwind the history stack if a state was pushed for this modal
+        if (history.state && history.state.appState === 'modal') {
+            history.back();
+        }
     }
 }
+
+// --- Back Navigation Support (Hardware Back Button) ---
+let lastModalStatePushed = false;
+
+window.addEventListener('load', () => {
+    // Observe modal changes to push history state automatically
+    const modalObserver = new MutationObserver(() => {
+        const hasModal = document.querySelector('.modal-overlay.active');
+        if (hasModal && !lastModalStatePushed) {
+            history.pushState({ appState: 'modal' }, '');
+            lastModalStatePushed = true;
+        } else if (!hasModal && lastModalStatePushed) {
+            lastModalStatePushed = false;
+        }
+    });
+
+    if (modalContainer) {
+        modalObserver.observe(modalContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }
+});
+
+// Handle physical back button / swipe back
+window.addEventListener('popstate', (e) => {
+    const activeModals = document.querySelectorAll('.modal-overlay.active');
+    if (activeModals.length > 0) {
+        // We are backing out of a modal, forcefully close it
+        activeModals.forEach(modal => {
+            modal.classList.remove('active');
+            setTimeout(() => modal.remove(), 200);
+        });
+        lastModalStatePushed = false; // Reset internal tracking
+    } else if (e.state && e.state.appState === 'tab') {
+        const tab = e.state.tab;
+        navItems.forEach(n => n.classList.remove('active'));
+        const targetNav = document.querySelector(`.nav-item[data-tab="${tab}"]`);
+        if (targetNav) targetNav.classList.add('active');
+        if (window.currentActiveTab !== tab) {
+            loadTab(tab);
+        }
+    } else if (!e.state) {
+        history.replaceState({ appState: 'tab', tab: 'checkout' }, '', '#checkout');
+        navItems.forEach(n => n.classList.remove('active'));
+        const targetNav = document.querySelector(`.nav-item[data-tab="checkout"]`);
+        if (targetNav) targetNav.classList.add('active');
+        if (window.currentActiveTab !== 'checkout') {
+            loadTab('checkout');
+        }
+    }
+});
 
 // Make init global
 window.onload = init;
