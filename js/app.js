@@ -20,7 +20,11 @@ const modalContainer = document.getElementById('modal-container');
 const views = {
     checkout: `
         <div class="view active" id="view-checkout">
-            <h2 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-muted)">Products</h2>
+            <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem; color: var(--text-muted)">Products</h2>
+            <div style="position: relative; margin-bottom: 12px; margin-right: 6px;">
+                <input type="text" id="search-checkout" class="form-control" placeholder="Search products..." style="padding-left: 36px; border-radius: 99px; background: var(--surface-color);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
             <div id="checkout-product-list" style="overflow-y: auto; flex: 1; padding-right: 6px;"></div>
             
             <!-- Bottom Sheet for Totals -->
@@ -100,12 +104,16 @@ const views = {
     `,
     products: `
         <div class="view active" id="view-products" style="position: relative;">
-            <div class="flex-between" style="margin-bottom: 1rem;">
+            <div class="flex-between" style="margin-bottom: 0.5rem;">
                 <h2 style="font-size: 1.1rem; color: var(--text-muted)">Products</h2>
                 <div style="display: flex; gap: 12px; align-items: center; padding-right: 8px;">
                     <button id="btn-toggle-select-all" style="background:var(--surface-color); border:1px solid var(--border-color); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--text-main); display:none; padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Select All</button>
                     <button id="btn-toggle-select" style="background:var(--accent-light); border:1px solid var(--accent-primary); font-weight:600; font-size:0.85rem; cursor:pointer; color:var(--accent-primary); padding: 6px 12px; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Select</button>
                 </div>
+            </div>
+            <div style="position: relative; margin-bottom: 12px; margin-right: 6px;">
+                <input type="text" id="search-products" class="form-control" placeholder="Search products..." style="padding-left: 36px; border-radius: 99px; background: var(--surface-color);">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%);"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </div>
             <div id="products-list-container" style="overflow-y: auto; flex: 1; padding-right: 6px; padding-bottom: 80px;"></div>
             <button class="fab" id="fab-add-product">
@@ -149,13 +157,20 @@ function loadTab(tabId) {
 function initProductsTab() {
     const fabButton = document.getElementById('fab-add-product');
     const listContainer = document.getElementById('products-list-container');
+    const searchInput = document.getElementById('search-products');
 
     fabButton.addEventListener('click', () => openProductModal());
 
-    renderProductsList(listContainer);
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            renderProductsList(listContainer, e.target.value);
+        });
+    }
+
+    renderProductsList(listContainer, searchInput ? searchInput.value : '');
 }
 
-function renderProductsList(container) {
+function renderProductsList(container, searchQuery = '') {
     // Keep track of state
     window.selectedProductIds = window.selectedProductIds || new Set();
     window.isSelectMode = window.isSelectMode || false;
@@ -253,16 +268,22 @@ function renderProductsList(container) {
     const validIds = new Set(products.map(p => p.id));
     window.selectedProductIds = new Set([...window.selectedProductIds].filter(id => validIds.has(id)));
 
+    // Apply strict search filtering
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const filteredProducts = normalizedQuery
+        ? products.filter(p => p.name.toLowerCase().includes(normalizedQuery))
+        : products;
+
     // Render logic
     let html = '';
 
-    if (products.length > 0) {
-        html += products.map(p => {
+    if (filteredProducts.length > 0) {
+        html += filteredProducts.map(p => {
             const isChecked = window.selectedProductIds.has(p.id) ? 'checked' : '';
             return `
             <div class="card flex-between product-item" data-id="${p.id}" style="transition: transform 0.1s;">
                 <div style="display: flex; align-items: center; width: 100%;">
-                    <input type="checkbox" class="checkbox-custom prod-checkbox" data-id="${p.id}" ${isChecked} style="pointer-events: none;">
+                    <input type="checkbox" class="checkbox-custom prod-checkbox" data-id="${p.id}" ${isChecked} style="pointer-events: none; display: ${window.isSelectMode ? 'inline-flex' : 'none'};">
                     <div>
                         <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 4px;">${p.name}</div>
                         <div style="color: var(--text-muted); font-size: 0.9rem;">
@@ -270,12 +291,12 @@ function renderProductsList(container) {
                         </div>
                     </div>
                 </div>
-                <svg class="edit-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="padding: 4px; box-sizing: content-box; flex-shrink: 0;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <svg class="edit-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="padding: 4px; box-sizing: content-box; flex-shrink: 0; display: ${window.isSelectMode ? 'none' : 'block'};"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </div>
             `;
         }).join('');
     } else {
-        html = '<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No products added. Click + to add.</div>';
+        html = `<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">${normalizedQuery ? 'No matching products found.' : 'No products added. Click + to add.'}</div>`;
     }
 
     container.innerHTML = html;
@@ -775,10 +796,12 @@ function openProductModal(product = null) {
 // ==========================================
 function initCheckoutTab() {
     const listContainer = document.getElementById('checkout-product-list');
+    const searchInput = document.getElementById('search-checkout');
     const products = Store.getProducts();
 
     if (products.length === 0) {
         listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No products available. Add some in the Products tab.</div>';
+        if (searchInput) searchInput.style.display = 'none';
         return;
     }
 
@@ -797,61 +820,17 @@ function initCheckoutTab() {
         });
     }
 
-    // Render available products to select
-    listContainer.innerHTML = products.map(p => {
-        const prices = p.prices || [{ price: p.price || 0, unit: p.unit || 'kg' }];
-
-        const pricesHtml = prices.map(pr => {
-            return `<div style="margin-bottom:2px; display:flex; align-items:baseline;"><span style="font-weight:600; color:var(--text-main);">₹${pr.price}</span><span style="color:var(--text-muted); margin-left:2px;">/${pr.unit}</span></div>`;
-        }).join('');
-
-        let presetsHtml = '';
-        if (p.presets && p.presets.length > 0) {
-            presetsHtml = `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">` + p.presets.map(preset => {
-                let baseTier = prices.find(pr => pr.unit === preset.unit);
-                if (!baseTier) {
-                    if (preset.unit === 'g') baseTier = prices.find(pr => pr.unit === 'kg');
-                    else if (preset.unit === 'ml') baseTier = prices.find(pr => pr.unit === 'litre');
-                }
-
-                let presetPriceStr = '?';
-                if (baseTier) {
-                    let cost = 0;
-                    if (baseTier.unit === preset.unit) cost = baseTier.price * preset.qty;
-                    else if (baseTier.unit === 'kg' && preset.unit === 'g') cost = (preset.qty / 1000) * baseTier.price;
-                    else if (baseTier.unit === 'litre' && preset.unit === 'ml') cost = (preset.qty / 1000) * baseTier.price;
-                    presetPriceStr = `₹${cost.toFixed(1).replace('.0', '')}`;
-                }
-                return `<span style="background:var(--surface-color); border:1px solid var(--border-color); padding:2px 6px; border-radius:6px; font-size:0.75rem; color:var(--text-muted);">${preset.name}: <span style="font-weight:600; color:var(--text-main);">${presetPriceStr}</span></span>`;
-            }).join('') + `</div>`;
-        }
-
-        return `
-        <div class="card flex-between checkout-item" data-id="${p.id}" style="align-items:flex-start;">
-            <div style="flex:1;">
-                <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 6px;">${p.name}</div>
-                <div style="font-size: 0.9rem;">
-                    ${pricesHtml}
-                </div>
-                ${presetsHtml}
-            </div>
-            <div style="width: 32px; height: 32px; border-radius: 16px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; color: var(--accent-primary); margin-top:2px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            </div>
-        </div>
-        `;
-    }).join('');
-
-    listContainer.querySelectorAll('.checkout-item').forEach(el => {
-        el.addEventListener('click', () => {
-            const id = el.dataset.id;
-            const prod = products.find(p => p.id === id);
-            openCalculatorModal(prod);
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            renderCheckoutProductList(listContainer, products, e.target.value);
         });
-    });
+        // Initial render
+        renderCheckoutProductList(listContainer, products, searchInput.value);
+    } else {
+        renderCheckoutProductList(listContainer, products, '');
+    }
 
     renderCheckoutPills();
-    updateCheckoutActionsVisibility();
 
     document.getElementById('btn-clear-cart').addEventListener('click', () => {
         if (Store.cart.length === 0 && !Store.checkoutRemarks) return;
@@ -900,6 +879,85 @@ function initCheckoutTab() {
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
         });
     });
+}
+
+function renderCheckoutProductList(container, products, searchQuery = '') {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const filteredProducts = normalizedQuery
+        ? products.filter(p => p.name.toLowerCase().includes(normalizedQuery))
+        : products;
+
+    if (filteredProducts.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 2rem;">No matching products found.</div>`;
+        return;
+    }
+
+    // Render available products to select
+    container.innerHTML = filteredProducts.map(p => {
+        const prices = p.prices || [{ price: p.price || 0, unit: p.unit || 'kg' }];
+
+        const pricesHtml = prices.map(pr => {
+            return `<div style="margin-bottom:2px; display:flex; align-items:baseline;"><span style="font-weight:600; color:var(--text-main);">₹${pr.price}</span><span style="color:var(--text-muted); margin-left:2px;">/${pr.unit}</span></div>`;
+        }).join('');
+
+        let presetsHtml = '';
+        if (p.presets && p.presets.length > 0) {
+            presetsHtml = `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">` + p.presets.map(preset => {
+                let baseTier = prices.find(pr => pr.unit === preset.unit);
+                if (!baseTier) {
+                    if (preset.unit === 'g') baseTier = prices.find(pr => pr.unit === 'kg');
+                    else if (preset.unit === 'ml') baseTier = prices.find(pr => pr.unit === 'litre');
+                }
+
+                let presetPriceStr = '?';
+                if (baseTier) {
+                    let cost = 0;
+                    if (baseTier.unit === preset.unit) cost = baseTier.price * preset.qty;
+                    else if (baseTier.unit === 'kg' && preset.unit === 'g') cost = (preset.qty / 1000) * baseTier.price;
+                    else if (baseTier.unit === 'litre' && preset.unit === 'ml') cost = (preset.qty / 1000) * baseTier.price;
+                    presetPriceStr = `₹${cost.toFixed(1).replace('.0', '')}`;
+                }
+                return `<span style="background:var(--surface-color); border:1px solid var(--border-color); padding:2px 6px; border-radius:6px; font-size:0.75rem; color:var(--text-muted);">${preset.name}: <span style="font-weight:600; color:var(--text-main);">${presetPriceStr}</span></span>`;
+            }).join('') + `</div>`;
+        }
+
+        return `
+        <div class="card flex-between checkout-item" data-id="${p.id}" style="align-items:flex-start;">
+            <div style="flex:1;">
+                <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 6px;">${p.name}</div>
+                <div style="font-size: 0.9rem;">
+                    ${pricesHtml}
+                </div>
+                ${presetsHtml}
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: 16px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; color: var(--accent-primary); margin-top:2px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </div>
+        </div>
+        `;
+    }).join('');
+
+    container.querySelectorAll('.checkout-item').forEach(el => {
+        el.addEventListener('click', () => {
+            const id = el.dataset.id;
+            const prod = products.find(p => p.id === id);
+            openCalculatorModal(prod);
+        });
+    });
+}
+
+function updateCheckoutActionsVisibility() {
+    const actionsContainer = document.getElementById('checkout-actions-container');
+    const totalPrice = document.getElementById('checkout-total-price');
+    if (!actionsContainer || !totalPrice) return;
+
+    if (Store.cart.length > 0 || (Store.checkoutRemarks && Store.checkoutRemarks.trim() !== '')) {
+        actionsContainer.style.display = 'flex';
+        totalPrice.style.display = 'inline-block';
+    } else {
+        actionsContainer.style.display = 'none';
+        totalPrice.style.display = 'inline-block'; // Keep total visible even when 0
+    }
 }
 
 function openCalculatorModal(product, existingCartItemIndex = -1) {
