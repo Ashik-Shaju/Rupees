@@ -2333,6 +2333,13 @@ window.addEventListener('load', () => {
 
     if (modalContainer) {
         modalObserver.observe(modalContainer, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+
+        // Close modal when clicking on the overlay background (outside the modal box)
+        modalContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-overlay')) {
+                window.closeModal(e.target.id);
+            }
+        });
     }
 
     // Attempt to handle virtual keyboard scrolling for all inputs
