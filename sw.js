@@ -1,10 +1,11 @@
-const CACHE_NAME = 'rupees-v23';
+const CACHE_NAME = 'rupees-v27';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './styles/style.css',
     './js/app.js',
-    './manifest.json'
+    './manifest.json',
+    './icon.svg'
 ];
 
 self.addEventListener('install', (e) => {
